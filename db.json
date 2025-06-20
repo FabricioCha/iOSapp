@@ -1,0 +1,20 @@
+{
+  "users": [
+    {
+      "id": "1",
+      "name": "Usuario de Prueba",
+      "email": "test@example.com",
+      "password": "password123"
+    },
+    {
+      "id": "2",
+      "name": "Jane Doe",
+      "email": "jane@example.com",
+      "password": "password123"
+    }
+  ],
+  "login_success_response": {
+    "password": "fabricio123",
+    "email": "test@example.com"
+  }
+}

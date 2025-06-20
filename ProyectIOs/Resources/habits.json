@@ -1,0 +1,35 @@
+[
+  {
+    "id": "1",
+    "userId": "1E6A7D9E-C8B0-4D4A-9F2D-3A1B0C9D8E7F",
+    "title": "Leer cada noche",
+    "habitType": "Nuevo Hábito",
+    "area": "Crecimiento Personal",
+    "difficulty": "Fácil",
+    "goal": "Leer 15 minutos antes de dormir",
+    "trigger": null,
+    "timeOfDay": "Noche",
+    "linkedHabitId": null,
+    "completionDates": [
+      "2025-06-14T22:15:00Z",
+      "2025-06-15T22:10:00Z"
+    ],
+    "creationDate": "2025-06-14T10:00:00Z"
+  },
+  {
+    "id": "1",
+    "userId": "1E6A7D9E-C8B0-4D4A-9F2D-3A1B0C9D8E7F",
+    "title": "Ejercicio Matutino",
+    "habitType": "Nuevo Hábito",
+    "area": "Salud",
+    "difficulty": "Moderado",
+    "goal": "20 minutos de ejercicio",
+    "trigger": null,
+    "timeOfDay": "Mañana",
+    "linkedHabitId": null,
+    "completionDates": [
+      "2025-06-15T07:30:00Z"
+    ],
+    "creationDate": "2025-06-15T07:00:00Z"
+  }
+]

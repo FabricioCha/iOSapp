@@ -1,0 +1,38 @@
+[
+  {
+    "id": "first_habit_created",
+    "name": "Pionero",
+    "description": "Has creado tu primer hábito. ¡El viaje ha comenzado!",
+    "iconName": "flag.fill"
+  },
+  {
+    "id": "first_habit_completed",
+    "name": "Primer Paso",
+    "description": "Completaste un hábito por primera vez. ¡Sigue así!",
+    "iconName": "figure.walk"
+  },
+  {
+    "id": "three_day_streak",
+    "name": "Constancia de Bronce",
+    "description": "¡Mantuviste una racha de 3 días seguidos!",
+    "iconName": "medal.fill"
+  },
+  {
+    "id": "seven_day_streak",
+    "name": "Maestro Semanal",
+    "description": "¡Una semana completa de progreso! Eres imparable.",
+    "iconName": "star.leadinghalf.filled"
+  },
+  {
+    "id": "productivity_pro",
+    "name": "Pro de la Productividad",
+    "description": "Completaste 10 veces un hábito del área de Productividad.",
+    "iconName": "brain.head.profile"
+  },
+  {
+    "id": "health_hero",
+    "name": "Héroe de la Salud",
+    "description": "Completaste 10 veces un hábito del área de Salud.",
+    "iconName": "heart.fill"
+  }
+]

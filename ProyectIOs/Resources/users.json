@@ -1,0 +1,12 @@
+[
+  {
+    "id": "1",
+    "fullName": "Elena Nova",
+    "email": "elena@ejemplo.com",
+    "password": "password123",
+    "unlockedBadgeIDs": [
+      "first_habit",
+      "three_day_streak"
+    ]
+  }
+]
