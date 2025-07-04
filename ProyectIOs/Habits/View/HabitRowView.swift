@@ -6,9 +6,6 @@
 //
 import SwiftUI
 
-// La vista que representa una sola fila de hábito en la lista principal.
-import SwiftUI
-
 struct HabitRowView: View {
     
     @EnvironmentObject var habitsViewModel: HabitsViewModel
@@ -26,8 +23,9 @@ struct HabitRowView: View {
                     .font(.headline)
                     .fontWeight(.semibold)
                 
-                if let meta = habit.meta_objetivo, !meta.isEmpty {
-                    Text(meta)
+                // Mostramos la meta si existe, formateándola como un número.
+                if let meta = habit.meta_objetivo {
+                    Text("Meta: \(meta, specifier: "%.1f")") // Formatea el número
                         .font(.callout)
                         .foregroundStyle(Color.appTextSecondary)
                 }
@@ -35,9 +33,9 @@ struct HabitRowView: View {
             
             Spacer()
             
-            // Lógica del checkmark actualizada
-            // Comprueba si el ID del hábito está en nuestro diccionario de estado.
-            if habitsViewModel.completionStatus[habit.id, default: false] {
+            // --- CORRECCIÓN ---
+            // La clave del diccionario ahora debe ser un String del ID numérico.
+            if habitsViewModel.completionStatus[String(habit.id), default: false] {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.largeTitle)
                     .foregroundStyle(Color.appSuccess)
@@ -47,7 +45,7 @@ struct HabitRowView: View {
         .padding()
         .background(Color.gray.opacity(0.15))
         .cornerRadius(15)
-        .animation(.spring(), value: habitsViewModel.completionStatus[habit.id])
+        .animation(.spring(), value: habitsViewModel.completionStatus[String(habit.id)])
     }
     
     private func iconForType(_ type: ApiHabitType) -> String {

@@ -34,13 +34,18 @@ class GamificationService {
     /// - Returns: Un array con las nuevas insignias que se acaban de ganar.
     func checkAndAwardBadges(dashboardData: DashboardData, for currentUser: User) -> [Badge] {
         var newlyAwardedBadges: [Badge] = []
-        let unlockedIDs = Set(currentUser.unlockedBadgeIDs)
+        let unlockedIDs = Set(currentUser.unlockedBadgeIDs ?? [])
         
         let stats = dashboardData.habitsConEstadisticas
         
         // Obtenemos las estadísticas globales (usando la misma lógica que en StatsViewModel).
         let currentStreak = stats.map { $0.rachaActual }.max() ?? 0
-        let hasAnyCompletion = stats.contains { $0.totalCompletados > 0 }
+        
+        // --- LÓGICA CORREGIDA ---
+        // En lugar de buscar `totalCompletados`, comprobamos si algún hábito
+        // tiene una racha mayor que cero. Esto cumple el mismo propósito
+        // con los datos que sí tenemos disponibles.
+        let hasAnyCompletion = stats.contains { $0.rachaActual > 0 }
         
         // 1. Revisa la insignia "Pionero" (se otorga al crear el primer hábito).
         // Esta lógica ahora debe vivir en HabitsViewModel, después de crear un hábito con éxito.

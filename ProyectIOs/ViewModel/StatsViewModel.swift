@@ -32,20 +32,22 @@ class StatsViewModel: ObservableObject {
                 // Hacemos la llamada al endpoint del dashboard.
                 let dashboardData = try await networkService.fetchDashboardData()
                 
-                // Aquí, procesaríamos la respuesta.
-                // La API que describiste devuelve hábitos individuales con sus rachas.
-                // Para obtener una racha global, necesitaríamos sumarizar los datos.
-                // Por ahora, encontraremos la racha más larga y la racha actual más alta
-                // entre todos los hábitos como un ejemplo.
-                
                 let habitsWithStats = dashboardData.habitsConEstadisticas
                 
+                // --- LÓGICA CORREGIDA ---
+                // Ahora, tanto la racha actual como la más larga se basan en `rachaActual`,
+                // que es el único dato de racha que provee la API por cada hábito.
+                // Buscamos la racha actual más alta entre todos los hábitos.
                 self.currentStreak = habitsWithStats.map { $0.rachaActual }.max() ?? 0
-                self.longestStreak = habitsWithStats.map { $0.mejorRacha }.max() ?? 0
-                self.totalCompletions = habitsWithStats.map { $0.totalCompletados }.reduce(0, +)
                 
-                // El cálculo de "Tasa de Éxito" global requeriría más información del backend,
-                // como desde cuándo se está siguiendo cada hábito. Lo dejaremos en 0 por ahora.
+                // Asumimos que la "Mejor Racha" global es la racha actual más alta que tienes.
+                self.longestStreak = habitsWithStats.map { $0.rachaActual }.max() ?? 0
+                
+                // La API no provee un total de completados, por lo que esta estadística
+                // no se puede calcular en el frontend. La dejamos en 0.
+                self.totalCompletions = 0
+                
+                // La tasa de éxito tampoco se puede calcular sin el total de completados.
                 self.overallCompletionRate = 0.0
 
             } catch {

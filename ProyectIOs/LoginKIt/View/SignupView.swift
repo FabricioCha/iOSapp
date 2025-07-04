@@ -50,7 +50,11 @@ struct SignupView: View {
                     GradientButton(
                         title: "Registrarse",
                         icon: "arrow.right",
-                        action: authViewModel.signup
+                        action: {
+                            Task{
+                                await authViewModel.signup()
+                            }
+                        }
                     )
                     .hSpacing(.trailing)
                     .disabled(authViewModel.email.isEmpty || authViewModel.password.isEmpty || authViewModel.fullName.isEmpty)

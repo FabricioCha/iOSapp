@@ -10,6 +10,7 @@ import SwiftUI
 struct LoginView: View {
     
     @EnvironmentObject var authViewModel: AuthViewModel
+    @EnvironmentObject var habitsViewModel: HabitsViewModel
     @Binding var showSignup: Bool
     
     var body: some View {
@@ -40,11 +41,15 @@ struct LoginView: View {
                     GradientButton(
                         title: "Iniciar Sesión",
                         icon: "arrow.right",
-                        action: authViewModel.login
+                        action: {
+                            Task {
+                                await authViewModel.login()
+                                await habitsViewModel.loadHabits() // Si necesitas cargar hábitos tras login
+                            }
+                        }
                     )
                     .hSpacing(.trailing)
                     .disabled(authViewModel.email.isEmpty || authViewModel.password.isEmpty)
-                    
                 }
                 .padding(.top, 20)
                 
@@ -62,7 +67,6 @@ struct LoginView: View {
                 }
                 .font(.callout)
                 .hSpacing()
-                
             }
             .padding(.vertical, 15)
             .padding(.horizontal, 25)
@@ -81,6 +85,7 @@ struct LoginView: View {
         var body: some View {
             LoginView(showSignup: $showSignup)
                 .environmentObject(AuthViewModel())
+                .environmentObject(HabitsViewModel())
         }
     }
     

@@ -10,6 +10,8 @@ import SwiftUI
 struct ProfileView: View {
     
     @EnvironmentObject var authViewModel: AuthViewModel
+    // Añadimos el HabitsViewModel desde el entorno.
+    @EnvironmentObject var habitsViewModel: HabitsViewModel
     
     var body: some View {
         NavigationStack {
@@ -28,7 +30,7 @@ struct ProfileView: View {
                                         .font(.caption)
                                         .foregroundColor(Color.appTextSecondary)
                                 }
-                                Text(user.nombre)
+                                Text(user.name)
                                     .font(.title3)
                                     .fontWeight(.semibold)
                                 
@@ -48,8 +50,6 @@ struct ProfileView: View {
                             .cornerRadius(15)
                             .padding(.horizontal)
                             
-                            // Navegación a Insignias (Restaurada)
-                            // Este NavigationLink ahora apunta a la BadgesView funcional.
                             NavigationLink {
                                 BadgesView()
                             } label: {
@@ -77,7 +77,9 @@ struct ProfileView: View {
                             title: "Cerrar Sesión",
                             icon: "rectangle.portrait.and.arrow.right",
                             action: {
-                                authViewModel.logout()
+                                // --- LLAMADA CORREGIDA ---
+                                // Ahora le pasamos el habitsViewModel a la función logout.
+                                authViewModel.logout(habitsViewModel: habitsViewModel)
                             }
                         )
                         .padding(.bottom, 40)
@@ -98,7 +100,7 @@ struct ProfileView: View {
             let vm = AuthViewModel()
             vm.currentUser = User(
                 id: "previewUser",
-                nombre: "Usuario de Prueba",
+                name: "Usuario de Prueba",
                 email: "preview@test.com",
                 unlockedBadgeIDs: ["first_habit_completed"]
             )
@@ -108,6 +110,8 @@ struct ProfileView: View {
         var body: some View {
             ProfileView()
                 .environmentObject(Self.authViewModel)
+                // Añadimos el HabitsViewModel al entorno de la preview.
+                .environmentObject(HabitsViewModel())
         }
     }
     

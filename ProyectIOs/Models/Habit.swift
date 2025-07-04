@@ -1,13 +1,5 @@
-//
-//  Habit.swift
-//  ProyectIOs
-//
-//  Created by Fabricio Chavez on 16/06/25.
-//
-
 import Foundation
 
-// Nuevo enum que coincide con los tipos de la API.
 enum ApiHabitType: String, Codable, CaseIterable {
     case siNo = "SI_NO"
     case medibleNumerico = "MEDIBLE_NUMERICO"
@@ -22,26 +14,28 @@ enum ApiHabitType: String, Codable, CaseIterable {
     }
 }
 
-// Modelo de Hábito adaptado para la API.
 struct Habit: Identifiable, Codable, Hashable {
-    let id: String // El ID de la API
+    // CAMBIO: El ID ahora es Int para coincidir con la base de datos.
+    let id: Int
     let nombre: String
     let tipo: ApiHabitType
     var descripcion: String?
-    var meta_objetivo: String? // Mapea desde 'goal' de tu modelo anterior.
-    
-    // El progreso se consultará por separado, ya no está en este modelo.
+    // CAMBIO: La meta ahora es Double? (número decimal) para coincidir con la API.
+    var meta_objetivo: Double?
 
     enum CodingKeys: String, CodingKey {
         case id, nombre, tipo, descripcion
-        case meta_objetivo = "metaObjetivo" // Asegúrate que el nombre coincida con la API.
+        // Asegúrate de que el nombre de la clave coincida con la API.
+        case meta_objetivo = "metaObjetivo"
     }
 }
 
-// Estructura para el cuerpo de la solicitud al registrar un progreso.
 struct HabitLogRequest: Codable {
-    let habito_id: String
+    // CAMBIO: El ID del hábito ahora es Int.
+    let habito_id: Int
     let fecha_registro: String // Formato YYYY-MM-DD
     var valor_booleano: Bool?
-    var valor_numerico: Int?
+    // CAMBIO: El valor numérico ahora es Double?
+    var valor_numerico: Double?
+    var es_recaida: Bool?
 }

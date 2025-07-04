@@ -1,19 +1,34 @@
-//
-//  NetworkService.swift
-//  ProyectIOs
-//
-//  Created by Fabricio Chavez on 20/06/25.
-//
-
 import Foundation
+
+// --- NUEVO: Struct para el cuerpo de la solicitud de creación de hábito ---
+struct CreateHabitRequest: Encodable {
+    let nombre: String
+    let tipo: ApiHabitType
+    let descripcion: String?
+    let meta_objetivo: Double?
+}
+
+// --- NUEVO: Struct para la respuesta de logs de hábitos ---
+struct HabitLogResponse: Decodable {
+    let completionDates: [String]
+}
+
+// --- NUEVO: Struct para respuestas simples con mensaje ---
+struct MessageResponse: Decodable {
+    let message: String
+}
+
+// --- NUEVO: Struct para la respuesta de creación de hábito ---
+struct CreateHabitResponse: Codable {
+    let habit: Habit
+}
 
 class NetworkService {
     
     static let shared = NetworkService()
     
-    // IMPORTANTE: Reemplaza esta URL con la URL base de tu API.
+    // MARK: - Configuración base
     private let baseURL = URL(string: "https://ery-app-turso.vercel.app/api")!
-    
     private let keychainService = KeychainService.shared
     
     private let decoder: JSONDecoder = {
@@ -41,9 +56,9 @@ class NetworkService {
     private func getAuthToken() -> String? {
         return keychainService.getToken()
     }
-    
+
     // MARK: - Auth Endpoints
-    
+
     func register(nombre: String, email: String, password: String) async throws -> AuthResponse {
         let url = baseURL.appendingPathComponent("auth/register")
         var request = URLRequest(url: url)
@@ -54,7 +69,7 @@ class NetworkService {
     }
 
     func login(email: String, password: String) async throws -> AuthResponse {
-        let url = baseURL.appendingPathComponent("auth/callback/credentials")
+        let url = baseURL.appendingPathComponent("auth/token")
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         let body = ["email": email, "password": password]
@@ -75,31 +90,54 @@ class NetworkService {
         let url = baseURL.appendingPathComponent("habits")
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
-        return try await performRequest(for: request, withAuth: true)
+        let response = try await performRequest(for: request, withAuth: true, expecting: HabitListResponse.self)
+        return response.habits
     }
 
-    func createHabit(nombre: String, tipo: ApiHabitType, descripcion: String?, metaObjetivo: String?) async throws -> Habit {
+    /// Crea un nuevo hábito para el usuario autenticado.
+    func createHabit(nombre: String, tipo: ApiHabitType, descripcion: String?, metaObjetivo: Double?) async throws -> Habit {
         let url = baseURL.appendingPathComponent("habits")
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        let body = ["nombre": nombre, "tipo": tipo.rawValue, "descripcion": descripcion, "meta_objetivo": metaObjetivo]
-        request.httpBody = try encoder.encode(body.compactMapValues { $0 })
-        return try await performRequest(for: request, withAuth: true)
+        
+        let requestBody = CreateHabitRequest(
+            nombre: nombre,
+            tipo: tipo,
+            descripcion: descripcion,
+            meta_objetivo: metaObjetivo
+        )
+        
+        request.httpBody = try encoder.encode(requestBody)
+        
+        let response = try await performRequest(for: request, withAuth: true, expecting: CreateHabitResponse.self)
+        return response.habit
     }
-    
-    func deleteHabit(habitId: String) async throws {
+
+    // CORREGIDO: Ahora maneja correctamente la respuesta JSON del DELETE
+    func deleteHabit(habitId: Int) async throws {
         let url = baseURL.appendingPathComponent("habits/\(habitId)")
         var request = URLRequest(url: url)
         request.httpMethod = "DELETE"
-        _ = try await performRequest(for: request, withAuth: true, expecting: Data.self)
+        // Cambiado para esperar MessageResponse en lugar de Data
+        _ = try await performRequest(for: request, withAuth: true, expecting: MessageResponse.self)
     }
 
+    // CORREGIDO: Ahora maneja correctamente la respuesta JSON del POST
     func logHabitProgress(log: HabitLogRequest) async throws {
         let url = baseURL.appendingPathComponent("habits/log")
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.httpBody = try encoder.encode(log)
-        _ = try await performRequest(for: request, withAuth: true, expecting: Data.self)
+        // Cambiado para esperar MessageResponse en lugar de Data
+        _ = try await performRequest(for: request, withAuth: true, expecting: MessageResponse.self)
+    }
+
+    /// --- NUEVO: Obtener logs de un hábito por ID ---
+    func fetchLogs(for habitID: Int) async throws -> HabitLogResponse {
+        let url = baseURL.appendingPathComponent("habits/\(habitID)/logs")
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        return try await performRequest(for: request, withAuth: true, expecting: HabitLogResponse.self)
     }
     
     // MARK: - Dashboard Endpoint
@@ -111,24 +149,14 @@ class NetworkService {
         return try await performRequest(for: request, withAuth: true)
     }
     
-    // MARK: - Habit Log Endpoint (Nuevo)
-    
-    /// Obtiene el historial de completados para un hábito específico.
-    func fetchLogs(for habitId: String) async throws -> HabitLogResponse {
-        let url = baseURL.appendingPathComponent("habits/\(habitId)/logs")
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        return try await performRequest(for: request, withAuth: true)
-    }
-    
-    // MARK: - Private Helper
+    // MARK: - Private Request Helper
     
     private func performRequest<T: Decodable>(for request: URLRequest, withAuth: Bool = false, expecting: T.Type = T.self) async throws -> T {
         var mutableRequest = request
         
         if withAuth {
             guard let token = getAuthToken() else {
-                throw APIError.requestFailed(description: "Auth token no disponible. Por favor, inicie sesión.")
+                throw APIError.requestFailed(description: "Auth token no disponible.")
             }
             mutableRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
@@ -143,19 +171,23 @@ class NetworkService {
             throw APIError.invalidResponse
         }
 
+        if let jsonString = String(data: data, encoding: .utf8) {
+            print("Respuesta JSON recibida: \(jsonString)")
+        }
+
         guard (200...299).contains(httpResponse.statusCode) else {
             let errorDescription = String(data: data, encoding: .utf8) ?? "Sin descripción"
             throw APIError.serverError(statusCode: httpResponse.statusCode, description: errorDescription)
         }
         
-        if T.self == Data.self {
-            return Data() as! T
-        }
+        // CORREGIDO: Eliminado el manejo especial para Data.self que causaba problemas
+        // Ahora todos los endpoints devuelven respuestas JSON estructuradas
         
         do {
             return try decoder.decode(T.self, from: data)
         } catch {
             print("Error de decodificación: \(error)")
+            print("Datos recibidos: \(String(data: data, encoding: .utf8) ?? "No se pudo convertir a string")")
             throw APIError.decodingError(description: error.localizedDescription)
         }
     }

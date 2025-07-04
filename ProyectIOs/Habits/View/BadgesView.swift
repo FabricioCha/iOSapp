@@ -121,7 +121,7 @@ struct BadgeCellView: View {
             // Simulamos un usuario con algunas insignias desbloqueadas.
             vm.currentUser = User(
                 id: "previewUser",
-                nombre: "Usuario de Prueba",
+                name: "Usuario de Prueba", // <--- CORREGIDO
                 email: "preview@test.com",
                 unlockedBadgeIDs: ["first_habit_completed", "three_day_streak"]
             )

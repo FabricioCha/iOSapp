@@ -1,24 +1,21 @@
 import SwiftUI
+import CoreMotion
 
 struct ContentView: View {
     
-    // El AuthViewModel ahora se inicializa directamente, sin dependencias.
     @StateObject private var authViewModel = AuthViewModel()
+    // El HabitsViewModel ahora se crea aquí para que esté disponible globalmente.
+    @StateObject private var habitsViewModel = HabitsViewModel()
+    
+    @Namespace private var ns
     
     @State private var showSignup = false
     
     var body: some View {
-        // Un ZStack para poder mostrar un indicador de carga global sobre todo lo demás.
         ZStack {
             Group {
                 if authViewModel.isLoggedIn, let currentUser = authViewModel.currentUser {
-                    // La inicialización de MainTabView también deberá cambiar en la siguiente fase.
-                    // Por ahora, lo dejamos así para que compile.
-                    MainTabView(
-                        user: currentUser
-                        // dataService ya no existe, lo eliminaremos más adelante
-                        // authViewModel se pasará por el entorno
-                    )
+                    MainTabView(user: currentUser)	
                 } else {
                     NavigationStack {
                         LoginView(showSignup: $showSignup)
@@ -30,9 +27,10 @@ struct ContentView: View {
                     }
                 }
             }
-            .environmentObject(authViewModel) // Inyectamos el AuthViewModel en el entorno.
+            // Inyectamos ambos ViewModels para que estén disponibles en toda la app.
+            .environmentObject(authViewModel)
+            .environmentObject(habitsViewModel)
             
-            // Si está cargando, muestra una vista de progreso.
             if authViewModel.isLoading {
                 Color.black.opacity(0.4).ignoresSafeArea()
                 ProgressView()

@@ -1,15 +1,7 @@
-//
-//  AuthViewMoldel.swift
-//  ProyectIOs
-//
-//  Created by Fabricio Chavez on 12/06/25.
-//
-
 import Foundation
 import Combine
 import SwiftUI
 
-@MainActor
 class AuthViewModel: ObservableObject {
     
     private let networkService: NetworkService = .shared
@@ -18,13 +10,10 @@ class AuthViewModel: ObservableObject {
     
     @Published var currentUser: User?
     @Published var isLoggedIn: Bool = false
-    
     @Published var email = ""
     @Published var password = ""
     @Published var fullName = ""
-    
     @Published var alertItem: AlertItem?
-    
     @Published var isLoading = false
     @Published var newlyAwardedBadges: [Badge] = []
     
@@ -35,67 +24,65 @@ class AuthViewModel: ObservableObject {
             .map { $0 != nil }
             .assign(to: \.isLoggedIn, on: self)
             .store(in: &cancellables)
-            
-        checkForPersistedSession()
+        
+        Task {
+            await checkForPersistedSession()
+        }
     }
     
     @MainActor
-    func checkForPersistedSession() {
+    func checkForPersistedSession() async {
         guard let token = keychainService.getToken() else { return }
         
         isLoading = true
-        Task {
-            defer { isLoading = false }
-            networkService.setAuthToken(token)
-            do {
-                let user = try await networkService.fetchCurrentUser()
-                var userWithBadges = user
-                userWithBadges.unlockedBadgeIDs = loadBadges(for: user.id)
-                self.currentUser = userWithBadges
-            } catch {
-                networkService.setAuthToken(nil)
-            }
+        defer { isLoading = false }
+        
+        networkService.setAuthToken(token)
+        do {
+            let user = try await networkService.fetchCurrentUser()
+            var userWithBadges = user
+            userWithBadges.unlockedBadgeIDs = loadBadges(for: user.id)
+            self.currentUser = userWithBadges
+        } catch {
+            networkService.setAuthToken(nil)
         }
     }
     
     @MainActor
-    func login() {
+    func login() async {
         isLoading = true
-        Task {
-            defer { isLoading = false }
-            do {
-                let authResponse = try await networkService.login(email: self.email, password: self.password)
-                networkService.setAuthToken(authResponse.token)
-                
-                var user = authResponse.user
-                user.unlockedBadgeIDs = loadBadges(for: user.id)
-                self.currentUser = user
-                
-                resetFields()
-            } catch {
-                self.alertItem = AlertItem.from(error: error)
-            }
+        defer { isLoading = false }
+        do {
+            let authResponse = try await networkService.login(email: self.email, password: self.password)
+            networkService.setAuthToken(authResponse.token)
+            
+            var user = authResponse.user
+            user.unlockedBadgeIDs = loadBadges(for: user.id)
+            self.currentUser = user
+            
+            resetFields()
+        } catch {
+            self.alertItem = AlertItem.from(error: error)
         }
     }
     
     @MainActor
-    func signup() {
+    func signup() async {
         isLoading = true
-        Task {
-            defer { isLoading = false }
-            do {
-                _ = try await networkService.register(nombre: self.fullName, email: self.email, password: self.password)
-                await login()
-            } catch {
-                self.alertItem = AlertItem.from(error: error)
-            }
+        defer { isLoading = false }
+        do {
+            _ = try await networkService.register(nombre: self.fullName, email: self.email, password: self.password)
+            await login()
+        } catch {
+            self.alertItem = AlertItem.from(error: error)
         }
     }
     
     @MainActor
-    func logout() {
+    func logout(habitsViewModel: HabitsViewModel) {
         networkService.setAuthToken(nil)
         self.currentUser = nil
+//        habitsViewModel.clearHabits()
         resetFields()
     }
     
@@ -107,18 +94,18 @@ class AuthViewModel: ObservableObject {
     
     @MainActor
     func checkAwards() {
-        guard var user = self.currentUser else { return }
-        
         Task {
+            guard var user = self.currentUser else { return }
+            
             do {
                 let dashboardData = try await networkService.fetchDashboardData()
                 let awardedBadges = gamificationService.checkAndAwardBadges(dashboardData: dashboardData, for: user)
                 
                 if !awardedBadges.isEmpty {
                     for badge in awardedBadges {
-                        user.unlockedBadgeIDs.append(badge.id)
+                        user.unlockedBadgeIDs = (user.unlockedBadgeIDs ?? []) + [badge.id]
                     }
-                    saveBadges(for: user.id, badges: user.unlockedBadgeIDs)
+                    saveBadges(for: user.id, badges: user.unlockedBadgeIDs ?? [])
                     
                     self.currentUser = user
                     self.newlyAwardedBadges = awardedBadges

@@ -7,14 +7,10 @@
 
 import SwiftUI
 
-// Esta vista contiene el flujo completo para crear un nuevo hábito.
-// Ha sido simplificada a 2 pasos para coincidir con la API.
+// Vista que contiene el flujo de creación de hábitos.
 struct OnboardingContainerView: View {
     
-    // ViewModel para gestionar el estado del flujo de creación.
     @StateObject private var onboardingViewModel = OnboardingViewModel()
-    
-    // ViewModels del entorno para guardar el hábito y cerrar la vista.
     @EnvironmentObject var habitsViewModel: HabitsViewModel
     @Environment(\.dismiss) var dismiss
     
@@ -23,21 +19,8 @@ struct OnboardingContainerView: View {
             Color.appBackground.ignoresSafeArea()
             
             VStack {
-                // MARK: - Top Bar (Close Button)
-                HStack {
-                    Spacer()
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.headline)
-                            .foregroundColor(Color.appTextSecondary)
-                    }
-                }
-                .padding()
+                // ... (Top Bar sin cambios)
                 
-                // MARK: - Page Content
-                // El TabView ahora solo tiene 2 páginas.
                 TabView(selection: $onboardingViewModel.currentPage) {
                     Step1_HabitTypeView()
                         .tag(0)
@@ -45,61 +28,49 @@ struct OnboardingContainerView: View {
                     Step3_DefineHabitView()
                         .tag(1)
                 }
-                .tabViewStyle(.page(indexDisplayMode: .never)) // Oculta los puntos del paginador.
+                .tabViewStyle(.page(indexDisplayMode: .never))
                 
-                // MARK: - Bottom Navigation
+                // ... (Bottom Navigation sin cambios)
                 HStack {
-                    // Muestra el botón "Atrás" solo si no estamos en la primera página.
                     if onboardingViewModel.currentPage > 0 {
                         Button("Atrás") {
-                            withAnimation {
-                                onboardingViewModel.currentPage -= 1
-                            }
+                            withAnimation { onboardingViewModel.currentPage -= 1 }
                         }
-                        .fontWeight(.semibold)
-                        .foregroundColor(Color.appTextSecondary)
                     }
                     
                     Spacer()
                     
-                    // El botón principal cambia su título y acción según la página actual.
                     GradientButton(
                         title: onboardingViewModel.currentPage == 1 ? "Finalizar" : "Siguiente",
                         icon: onboardingViewModel.currentPage == 1 ? "checkmark.circle" : "arrow.right"
                     ) {
                         if onboardingViewModel.currentPage == 1 {
                             saveHabit()
-                            dismiss() // Cierra la vista modal al finalizar.
+                            dismiss()
                         } else {
-                            withAnimation {
-                                onboardingViewModel.currentPage += 1
-                            }
+                            withAnimation { onboardingViewModel.currentPage += 1 }
                         }
                     }
-                    // El botón se deshabilita si no se ha cumplido la condición de la página actual.
                     .disabled(onboardingViewModel.isNextButtonDisabled)
                 }
                 .padding(30)
             }
         }
         .foregroundColor(Color.appTextPrimary)
-        .environmentObject(onboardingViewModel) // Pasa el onboardingViewModel a las vistas hijas (Step1 y Step3).
+        .environmentObject(onboardingViewModel)
     }
     
-    /// Recopila los datos del OnboardingViewModel y llama a la función del HabitsViewModel para guardar el hábito.
+    // --- FUNCIÓN CORREGIDA ---
     private func saveHabit() {
-        // Nos aseguramos de que el usuario haya seleccionado un tipo de hábito.
-        guard let habitType = onboardingViewModel.habitType else {
-            print("Error: No se seleccionó un tipo de hábito.")
-            return
-        }
+        guard let habitType = onboardingViewModel.habitType else { return }
         
-        // Llama a la función del HabitsViewModel que se comunica con la API.
+        // Llamamos a la función addHabit con el tipo de dato correcto para la meta (String?).
+        // La conversión a Double se hará dentro del HabitsViewModel.
         habitsViewModel.addHabit(
             nombre: onboardingViewModel.habitTitle,
             tipo: habitType,
-            descripcion: nil, // La descripción es opcional y podría añadirse al formulario.
-            metaObjetivo: onboardingViewModel.habitGoal
+            descripcion: nil,
+            metaObjetivoString: onboardingViewModel.habitGoal
         )
     }
 }

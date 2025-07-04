@@ -98,7 +98,7 @@ struct MainTabView: View {
         private static var authViewModel: AuthViewModel = {
             let vm = AuthViewModel()
             // Simulamos que un usuario ha iniciado sesión.
-            vm.currentUser = User(id: "1", nombre: "Usuario de Prueba", email: "preview@test.com")
+            vm.currentUser = User(id: "1", name: "Usuario de Prueba", email: "preview@test.com") // <--- CORREGIDO
             // Simulamos que el usuario acaba de ganar una insignia.
             vm.newlyAwardedBadges = [
                 Badge(id: "three_day_streak", name: "Constancia de Bronce", description: "¡Mantuviste una racha de 3 días seguidos!", iconName: "medal.fill")
@@ -118,4 +118,3 @@ struct MainTabView: View {
     
     return PreviewWrapper()
 }
-
