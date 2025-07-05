@@ -1,14 +1,13 @@
 // ProyectIOs/Models/User.swift
 import Foundation
 
-// MARK: - CAMBIO 1: Modelo de Usuario principal de la App
-// Este es el modelo que usará la aplicación internamente.
-// El 'id' ahora es String para coincidir con la API.
+// MARK: - Modelo de Sesión (para Login/Registro)
+/// Representa al usuario autenticado en la sesión. Se utiliza para la respuesta de /api/auth/token.
 struct User: Codable, Identifiable {
     let id: String
-    var name: String // El nombre unificado para la app
+    var name: String
     let email: String
-    var unlockedBadgeIDs: [String]? //= []
+    var unlockedBadgeIDs: [String]?
 
     enum CodingKeys: String, CodingKey {
         case id, email, name
@@ -16,49 +15,59 @@ struct User: Codable, Identifiable {
     }
 }
 
-// MARK: - CAMBIO 2: Nueva estructura para credenciales de registro
-// Coincide con lo que espera tu endpoint /api/auth/register
+// MARK: - Modelo de Perfil (para la vista de Perfil)
+/// Representa la estructura de datos del perfil de un usuario tal como la devuelve el endpoint GET /api/profile.
+struct UserProfile: Codable, Identifiable {
+    let id: Int
+    let nombre: String
+    let email: String
+    
+    // --- CAMBIO CLAVE: Hacer más campos opcionales para evitar errores de decodificación ---
+    let rol: String?
+    let fechaCreacion: String? // Ahora es opcional
+    let ultimoLogin: String?
+    let estado: String?        // Ahora es opcional
+    let suspensionFin: String?
+
+    // Mapea las claves snake_case del JSON a camelCase en Swift.
+    enum CodingKeys: String, CodingKey {
+        case id, nombre, email, rol, estado
+        case fechaCreacion = "fecha_creacion"
+        case ultimoLogin = "ultimo_login"
+        case suspensionFin = "suspension_fin"
+    }
+}
+
+
+// MARK: - Estructuras de Soporte para Autenticación
+
 struct SignupCredentials: Codable {
     let nombre: String
     let email: String
     let password: String
 }
 
-// MARK: - CAMBIO 3: Nueva estructura para la respuesta del login
-// Coincide con la respuesta de /api/auth/token
 struct AuthResponse: Codable {
     let token: String
-    let user: User //LoginUserResponse
+    let user: User
 }
 
-// Estructura anidada para el usuario en la respuesta de login
-struct LoginUserResponse: Codable {
-    let id: String
-    let name: String
-    let email: String
-}
-
-// MARK: - CAMBIO 4: Nueva estructura para la respuesta del registro
-// Coincide con la respuesta de /api/auth/register
 struct RegisterResponse: Codable {
     let message: String
     let user: RegisterUserResponse
 }
 
-// Estructura anidada para el usuario en la respuesta de registro
 struct RegisterUserResponse: Codable {
     let id: String
     let nombre: String
     let email: String
 }
 
-// Credenciales de Login (sin cambios, ya debería existir)
 struct LoginCredentials: Codable {
     let email: String
     let password: String
 }
 
-// MARK: - CAMBIO 5: Modelo para decodificar mensajes de error de la API
 struct APIErrorResponse: Decodable {
     let message: String
 }

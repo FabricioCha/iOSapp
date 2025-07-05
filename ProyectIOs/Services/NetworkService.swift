@@ -1,6 +1,7 @@
 import Foundation
 
-// --- NUEVO: Struct para el cuerpo de la solicitud de creación de hábito ---
+// --- Structs para el cuerpo de las solicitudes ---
+
 struct CreateHabitRequest: Encodable {
     let nombre: String
     let tipo: ApiHabitType
@@ -8,26 +9,35 @@ struct CreateHabitRequest: Encodable {
     let meta_objetivo: Double?
 }
 
-// --- NUEVO: Struct para la respuesta de logs de hábitos ---
+// --- STRUCT CORREGIDA: Se añade el campo que faltaba ---
+struct UpdateProfileRequest: Encodable {
+    let nombre: String?
+    let contraseñaActual: String?
+    let nuevaContraseña: String?
+    // Este campo ahora se enviará a la API
+    let confirmarNuevaContraseña: String?
+}
+
+
+// --- Structs para las respuestas de la API ---
+
 struct HabitLogResponse: Decodable {
     let completionDates: [String]
 }
 
-// --- NUEVO: Struct para respuestas simples con mensaje ---
 struct MessageResponse: Decodable {
     let message: String
 }
 
-// --- NUEVO: Struct para la respuesta de creación de hábito ---
 struct CreateHabitResponse: Codable {
     let habit: Habit
 }
+
 
 class NetworkService {
     
     static let shared = NetworkService()
     
-    // MARK: - Configuración base
     private let baseURL = URL(string: "https://ery-app-turso.vercel.app/api")!
     private let keychainService = KeychainService.shared
     
@@ -84,6 +94,33 @@ class NetworkService {
         return try await performRequest(for: request, withAuth: true)
     }
 
+    // MARK: - Profile Endpoints
+    
+    func fetchUserProfile() async throws -> UserProfile {
+        let url = baseURL.appendingPathComponent("profile")
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        return try await performRequest(for: request, withAuth: true)
+    }
+    
+    // --- FUNCIÓN CORREGIDA: Se construye el cuerpo de la petición correctamente ---
+    func updateUserProfile(name: String?, currentPassword: String?, newPassword: String?, confirmNewPassword: String?) async throws {
+        let url = baseURL.appendingPathComponent("profile")
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        
+        let body = UpdateProfileRequest(
+            nombre: name,
+            contraseñaActual: currentPassword,
+            nuevaContraseña: newPassword,
+            confirmarNuevaContraseña: confirmNewPassword // Ahora se incluye en la petición
+        )
+        
+        request.httpBody = try encoder.encode(body)
+        
+        _ = try await performRequest(for: request, withAuth: true, expecting: MessageResponse.self)
+    }
+
     // MARK: - Habit Endpoints
     
     func fetchHabits() async throws -> [Habit] {
@@ -94,7 +131,6 @@ class NetworkService {
         return response.habits
     }
 
-    /// Crea un nuevo hábito para el usuario autenticado.
     func createHabit(nombre: String, tipo: ApiHabitType, descripcion: String?, metaObjetivo: Double?) async throws -> Habit {
         let url = baseURL.appendingPathComponent("habits")
         var request = URLRequest(url: url)
@@ -113,26 +149,21 @@ class NetworkService {
         return response.habit
     }
 
-    // CORREGIDO: Ahora maneja correctamente la respuesta JSON del DELETE
     func deleteHabit(habitId: Int) async throws {
         let url = baseURL.appendingPathComponent("habits/\(habitId)")
         var request = URLRequest(url: url)
         request.httpMethod = "DELETE"
-        // Cambiado para esperar MessageResponse en lugar de Data
         _ = try await performRequest(for: request, withAuth: true, expecting: MessageResponse.self)
     }
 
-    // CORREGIDO: Ahora maneja correctamente la respuesta JSON del POST
     func logHabitProgress(log: HabitLogRequest) async throws {
         let url = baseURL.appendingPathComponent("habits/log")
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.httpBody = try encoder.encode(log)
-        // Cambiado para esperar MessageResponse en lugar de Data
         _ = try await performRequest(for: request, withAuth: true, expecting: MessageResponse.self)
     }
 
-    /// --- NUEVO: Obtener logs de un hábito por ID ---
     func fetchLogs(for habitID: Int) async throws -> HabitLogResponse {
         let url = baseURL.appendingPathComponent("habits/\(habitID)/logs")
         var request = URLRequest(url: url)
@@ -176,12 +207,13 @@ class NetworkService {
         }
 
         guard (200...299).contains(httpResponse.statusCode) else {
+            // Intenta decodificar el mensaje de error de la API
+            if let apiError = try? decoder.decode(APIErrorResponse.self, from: data) {
+                 throw APIError.serverError(statusCode: httpResponse.statusCode, description: apiError.message)
+            }
             let errorDescription = String(data: data, encoding: .utf8) ?? "Sin descripción"
             throw APIError.serverError(statusCode: httpResponse.statusCode, description: errorDescription)
         }
-        
-        // CORREGIDO: Eliminado el manejo especial para Data.self que causaba problemas
-        // Ahora todos los endpoints devuelven respuestas JSON estructuradas
         
         do {
             return try decoder.decode(T.self, from: data)

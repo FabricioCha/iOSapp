@@ -36,26 +36,31 @@ class HabitsViewModel: ObservableObject {
             // Mapeamos los hábitos para la UI.
             self.habits = habitsWithStats.map { Habit(id: $0.id, nombre: $0.nombre, tipo: $0.tipo, descripcion: $0.descripcion, meta_objetivo: $0.meta_objetivo) }
             
-            // Mapeamos el estado de completado.
+            // --- AJUSTE CLAVE ---
+            // Mapeamos el estado de completado. Si `completadoHoy` es nulo, asumimos `false`.
             var statusDict: [String: Bool] = [:]
             for habit in habitsWithStats {
-                // Usamos String(habit.id) como clave porque el diccionario espera un String.
-                statusDict[String(habit.id)] = habit.completadoHoy
+                // Usamos el operador "nil-coalescing" (??) para dar un valor por defecto.
+                statusDict[String(habit.id)] = habit.completadoHoy ?? false
             }
             self.completionStatus = statusDict
             
         } catch {
+            // Ahora, si hay un error, lo imprimimos para una mejor depuración.
+            print("❌ Error al cargar los hábitos: \(error)")
+            if let decodingError = error as? DecodingError {
+                print("Detalles del error de decodificación: \(decodingError)")
+            }
             self.alertItem = AlertItem.from(error: error)
         }
     }
     
-    // --- FUNCIÓN CORREGIDA ---
-    /// Añade un nuevo hábito, convirtiendo la meta de String a Double.
+    // --- El resto de las funciones (addHabit, deleteHabit, toggleCompletion) no necesitan cambios ---
+    
     @MainActor
     func addHabit(nombre: String, tipo: ApiHabitType, descripcion: String?, metaObjetivoString: String?) {
         isLoading = true
         
-        // Convertimos el String de la meta a un Double. Si no es un número válido, será nil.
         let metaObjetivoDouble = Double(metaObjetivoString ?? "")
         
         Task {
@@ -69,15 +74,12 @@ class HabitsViewModel: ObservableObject {
         }
     }
     
-    // --- FUNCIÓN CORREGIDA ---
-    /// Elimina un hábito, asegurándose de que el ID es Int.
     @MainActor
     func deleteHabit(_ habit: Habit) {
         habits.removeAll { $0.id == habit.id }
         
         Task {
             do {
-                // habit.id ya es Int, por lo que la llamada es correcta.
                 try await networkService.deleteHabit(habitId: habit.id)
             } catch {
                  self.alertItem = AlertItem.from(error: error)
@@ -86,15 +88,12 @@ class HabitsViewModel: ObservableObject {
         }
     }
     
-    // --- FUNCIÓN CORREGIDA ---
-    /// Registra el progreso, asegurándose de que el ID es Int.
     @MainActor
     func toggleCompletion(for habit: Habit, authViewModel: AuthViewModel) {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
         let dateString = dateFormatter.string(from: Date())
         
-        // Creamos el request con habit.id, que ya es Int.
         let logRequest = HabitLogRequest(
             habito_id: habit.id,
             fecha_registro: dateString,
