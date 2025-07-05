@@ -22,6 +22,8 @@ extension Color {
     static let appTextSecondary = Color.gray
     static let appSuccess = Color.green
     static let appError = Color.red
+    static let appAccent = Color("AccentColor")
+    static let appCardBackground = Color.gray.opacity(0.15)
     
     // MARK: - Gradientes
     /// El gradiente principal para todos los botones de acción importantes.

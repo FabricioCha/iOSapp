@@ -18,6 +18,42 @@ struct UpdateProfileRequest: Encodable {
     let confirmarNuevaContraseña: String?
 }
 
+// --- Nuevos structs para gestión de perfil ---
+struct UserBasicInfo: Codable {
+    let id: Int
+    let nombre: String
+    let email: String
+    let fechaCreacion: String
+    
+    enum CodingKeys: String, CodingKey {
+        case id, nombre, email
+        case fechaCreacion = "fecha_creacion"
+    }
+}
+
+struct UserBasicInfoResponse: Codable {
+    let success: Bool
+    let user: UserBasicInfo
+}
+
+struct UserDetails: Codable {
+    let id: Int
+    let nombre: String
+    let apellido: String?
+    let email: String
+}
+
+struct UserDetailsResponse: Codable {
+    let user: UserDetails
+}
+
+struct UpdateUserDetailsRequest: Encodable {
+    let nombre: String?
+    let apellido: String?
+    let email: String?
+    let password: String?
+}
+
 
 // --- Structs para las respuestas de la API ---
 
@@ -120,6 +156,44 @@ class NetworkService {
         
         _ = try await performRequest(for: request, withAuth: true, expecting: MessageResponse.self)
     }
+    
+    // MARK: - User Management Endpoints
+    
+    /// Obtiene información básica de un usuario específico
+    func fetchUserBasicInfo(userId: Int) async throws -> UserBasicInfo {
+        let url = baseURL.appendingPathComponent("users/\(userId)")
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        let response = try await performRequest(for: request, withAuth: true, expecting: UserBasicInfoResponse.self)
+        return response.user
+    }
+    
+    /// Obtiene detalles completos de un usuario específico (requiere permisos de administrador)
+    func fetchUserDetails(userId: Int) async throws -> UserDetails {
+        let url = baseURL.appendingPathComponent("users/\(userId)/details")
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        let response = try await performRequest(for: request, withAuth: true, expecting: UserDetailsResponse.self)
+        return response.user
+    }
+    
+    /// Actualiza detalles de un usuario específico (requiere permisos de administrador)
+    func updateUserDetails(userId: Int, nombre: String?, apellido: String?, email: String?, password: String?) async throws {
+        let url = baseURL.appendingPathComponent("users/\(userId)/details")
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        
+        let body = UpdateUserDetailsRequest(
+            nombre: nombre,
+            apellido: apellido,
+            email: email,
+            password: password
+        )
+        
+        request.httpBody = try encoder.encode(body)
+        
+        _ = try await performRequest(for: request, withAuth: true, expecting: MessageResponse.self)
+    }
 
     // MARK: - Habit Endpoints
     
@@ -178,6 +252,44 @@ class NetworkService {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         return try await performRequest(for: request, withAuth: true)
+    }
+    
+    // MARK: - Enhanced Stats Endpoints (Phase 2)
+    
+    /// Obtiene estadísticas detalladas del usuario
+    func fetchUserDetailedStats() async throws -> UserDetailedStatsModel {
+        // Primero obtenemos el usuario actual para obtener su ID
+        let currentUser = try await fetchCurrentUser()
+        
+        let url = baseURL.appendingPathComponent("users/\(currentUser.id)/stats")
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        return try await performRequest(for: request, withAuth: true)
+    }
+    
+    /// Obtiene el registro de actividades del usuario para un mes específico
+    func fetchActivityLog(year: Int? = nil, month: Int? = nil) async throws -> ActivityLogResponse {
+        let currentDate = Date()
+        let calendar = Calendar.current
+        let currentYear = year ?? calendar.component(.year, from: currentDate)
+        let currentMonth = month ?? calendar.component(.month, from: currentDate)
+        
+        var urlComponents = URLComponents()
+        urlComponents.scheme = baseURL.scheme
+        urlComponents.host = baseURL.host
+        urlComponents.path = baseURL.path + "/activity-log"
+        urlComponents.queryItems = [
+            URLQueryItem(name: "year", value: "\(currentYear)"),
+            URLQueryItem(name: "month", value: "\(currentMonth)")
+        ]
+        
+        guard let url = urlComponents.url else {
+            throw APIError.requestFailed(description: "URL inválida para activity-log")
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        return try await performRequest(for: request, withAuth: true, expecting: ActivityLogResponse.self)
     }
     
     // MARK: - Private Request Helper

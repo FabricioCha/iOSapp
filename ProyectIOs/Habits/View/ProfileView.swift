@@ -61,6 +61,11 @@ struct ProfileView: View {
                                 .padding(.horizontal)
                             }
                             
+                            // Sección de gestión de usuarios (solo para administradores)
+                            if isUserAdmin(profile) {
+                                adminSection()
+                            }
+                            
                             Spacer()
                             
                             GradientButton(
@@ -147,6 +152,78 @@ struct ProfileView: View {
             return date.formatted(date: .long, time: .omitted)
         }
         return dateString
+    }
+    
+    // MARK: - Admin Functions
+    
+    private func isUserAdmin(_ profile: UserProfile) -> Bool {
+        return profile.rol?.lowercased() == "administrador" || profile.rol?.lowercased() == "moderador_contenido"
+    }
+    
+    @ViewBuilder
+    private func adminSection() -> some View {
+        VStack(spacing: 16) {
+            Text("Gestión de Usuarios")
+                .font(.headline)
+                .foregroundColor(.appTextPrimary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            VStack(spacing: 12) {
+                adminNavigationRow(
+                    icon: "person.crop.circle",
+                    title: "Ver Usuario",
+                    subtitle: "Consultar información básica",
+                    destination: UserSearchView()
+                )
+                
+                Divider()
+                
+                adminNavigationRow(
+                    icon: "person.crop.circle.badge.plus",
+                    title: "Gestionar Usuario",
+                    subtitle: "Editar detalles completos",
+                    destination: AdminUserSearchView()
+                )
+            }
+            .padding()
+            .background(Color.orange.opacity(0.1))
+            .cornerRadius(15)
+        }
+        .padding(.horizontal)
+    }
+    
+    @ViewBuilder
+    private func adminNavigationRow<Destination: View>(
+        icon: String,
+        title: String,
+        subtitle: String,
+        destination: Destination
+    ) -> some View {
+        NavigationLink(destination: destination) {
+            HStack {
+                Image(systemName: icon)
+                    .font(.title2)
+                    .foregroundColor(.orange)
+                    .frame(width: 30)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.body)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.appTextPrimary)
+                    
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundColor(.appTextSecondary)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .foregroundColor(.gray)
+                    .font(.caption)
+            }
+        }
     }
 }
 

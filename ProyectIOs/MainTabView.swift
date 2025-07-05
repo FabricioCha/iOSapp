@@ -39,11 +39,11 @@ struct MainTabView: View {
                 // El switch determina qué vista mostrar basándose en la pestaña seleccionada.
                 switch selectedTab {
                 case .home:
-                    HomeView()
+                    EnhancedHomeView()
                 case .stats:
-                    StatsView()
+                    EnhancedStatsView()
                 case .profile:
-                    ProfileView()
+                    EnhancedProfileView()
                 case .quotes:
                     QuotesView()
                 case .add:
