@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 enum ApiHabitType: String, Codable, CaseIterable {
     case siNo = "SI_NO"
@@ -10,6 +11,22 @@ enum ApiHabitType: String, Codable, CaseIterable {
         case .siNo: return "Hábito de Sí/No"
         case .medibleNumerico: return "Hábito Numérico"
         case .malHabito: return "Dejar un Mal Hábito"
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .siNo: return "checkmark.circle.fill"
+        case .medibleNumerico: return "number.circle.fill"
+        case .malHabito: return "xmark.circle.fill"
+        }
+    }
+    
+    var color: Color {
+        switch self {
+        case .siNo: return .green
+        case .medibleNumerico: return .blue
+        case .malHabito: return .red
         }
     }
 }
@@ -27,6 +44,25 @@ struct Habit: Identifiable, Codable, Hashable {
         case id, nombre, tipo, descripcion
         // Asegúrate de que el nombre de la clave coincida con la API.
         case meta_objetivo = "metaObjetivo"
+    }
+    
+    // Inicializador para cuando solo tenemos datos básicos (como en rutinas)
+    init(id: Int, nombre: String, tipo: ApiHabitType, descripcion: String? = nil, meta_objetivo: Double? = nil) {
+        self.id = id
+        self.nombre = nombre
+        self.tipo = tipo
+        self.descripcion = descripcion
+        self.meta_objetivo = meta_objetivo
+    }
+    
+    // Inicializador desde Decoder que maneja propiedades opcionales
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        nombre = try container.decode(String.self, forKey: .nombre)
+        tipo = try container.decode(ApiHabitType.self, forKey: .tipo)
+        descripcion = try container.decodeIfPresent(String.self, forKey: .descripcion)
+        meta_objetivo = try container.decodeIfPresent(Double.self, forKey: .meta_objetivo)
     }
 }
 
