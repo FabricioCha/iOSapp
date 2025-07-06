@@ -86,6 +86,93 @@ struct FriendActivityResponse: Codable {
     let total: Int
 }
 
+// MARK: - Friend Daily Activity Models (from backend)
+struct DailyActivity: Codable {
+    let completions: Int
+    let hasRelapse: Bool
+    
+    enum CodingKeys: String, CodingKey {
+        case completions
+        case hasRelapse = "hasRelapse"
+    }
+}
+
+struct FriendDailyActivityResponse: Codable {
+    let success: Bool
+    let activity: [String: DailyActivity]
+    let friendId: Int
+    let year: Int
+    let month: Int
+    
+    enum CodingKeys: String, CodingKey {
+        case success
+        case activity
+        case friendId
+        case year
+        case month
+    }
+}
+
+// MARK: - User Stats Models
+struct UserStatsHabit: Codable {
+    let id: Int
+    let nombre: String
+    let tipo: String
+    let rachaActual: Int
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case nombre
+        case tipo
+        case rachaActual = "racha_actual"
+    }
+}
+
+struct UserStats: Codable {
+    let userId: Int
+    let totalHabitsCompleted: Int
+    let longestStreak: Int
+    let currentStreak: Int
+    let totalAchievements: Int
+    let joinDate: String
+    let goodHabitsCount: Int
+    let addictionsCount: Int
+    let bestGoodHabitStreak: Int
+    let bestAddictionStreak: Int
+    let habitsWithStats: [UserStatsHabit]
+    
+    enum CodingKeys: String, CodingKey {
+        case userId = "user_id"
+        case totalHabitsCompleted = "total_habits_completed"
+        case longestStreak = "longest_streak"
+        case currentStreak = "current_streak"
+        case totalAchievements = "total_achievements"
+        case joinDate = "join_date"
+        case goodHabitsCount = "good_habits_count"
+        case addictionsCount = "addictions_count"
+        case bestGoodHabitStreak = "best_good_habit_streak"
+        case bestAddictionStreak = "best_addiction_streak"
+        case habitsWithStats = "habits_with_stats"
+    }
+    
+    // Computed properties for backward compatibility
+    var totalHabits: Int {
+        return habitsWithStats.count
+    }
+    
+    var completedToday: Int {
+        // This would need to be calculated based on today's completions
+        // For now, return 0 as placeholder
+        return 0
+    }
+    
+    var completionRate: Double {
+        // Calculate completion rate based on available data
+        guard totalHabitsCompleted > 0 else { return 0.0 }
+        return Double(totalHabitsCompleted) / Double(totalHabits * 30) // Assuming 30 days average
+    }
+}
+
 // MARK: - Friend Achievement Models
 struct FriendAchievement: Codable, Identifiable {
     let id: Int

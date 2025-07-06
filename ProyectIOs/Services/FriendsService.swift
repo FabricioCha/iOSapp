@@ -84,10 +84,73 @@ class FriendsService: ObservableObject {
     
     /// Obtiene la actividad de un amigo
     func getFriendActivity(friendId: Int) async throws -> FriendActivityResponse {
-        let url = baseURL.appendingPathComponent("friends/\(friendId)/activity")
+        // Obtener el mes y año actual
+        let now = Date()
+        let calendar = Calendar.current
+        let year = calendar.component(.year, from: now)
+        let month = calendar.component(.month, from: now)
+        
+        // Construir URL con parámetros de consulta
+        var urlComponents = URLComponents(url: baseURL.appendingPathComponent("friends/\(friendId)/activity"), resolvingAgainstBaseURL: false)!
+        urlComponents.queryItems = [
+            URLQueryItem(name: "year", value: String(year)),
+            URLQueryItem(name: "month", value: String(month))
+        ]
+        
+        guard let url = urlComponents.url else {
+            throw APIError.invalidURL
+        }
+        
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
-        return try await performRequest(for: request, expecting: FriendActivityResponse.self)
+        
+        // Obtener la actividad diaria del backend
+        let dailyResponse = try await performRequest(for: request, expecting: FriendDailyActivityResponse.self)
+        
+        // Convertir la respuesta del backend al formato esperado por la UI
+        let activities = convertDailyActivityToFriendActivity(dailyResponse.activity, friendId: friendId, year: year, month: month)
+        
+        return FriendActivityResponse(
+            success: dailyResponse.success,
+            activities: activities,
+            total: activities.count
+        )
+    }
+    
+    func getFriendStats(friendId: Int) async throws -> UserStats {
+        let url = baseURL.appendingPathComponent("users/\(friendId)/stats")
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        return try await performRequest(for: request, expecting: UserStats.self)
+    }
+    
+    private func convertDailyActivityToFriendActivity(_ dailyActivity: [String: DailyActivity], friendId: Int, year: Int, month: Int) -> [FriendActivity] {
+        var activities: [FriendActivity] = []
+        
+        for (dateString, activity) in dailyActivity {
+            if activity.completions > 0 {
+                activities.append(FriendActivity(
+                    id: "\(friendId)-\(dateString)-completions",
+                    tipo: "habit_completed",
+                    descripcion: "Completó \(activity.completions) hábito(s)",
+                    fecha: "\(dateString) 12:00:00",
+                    detalles: ["completions": String(activity.completions)]
+                ))
+            }
+            
+            if activity.hasRelapse {
+                activities.append(FriendActivity(
+                    id: "\(friendId)-\(dateString)-relapse",
+                    tipo: "relapse",
+                    descripcion: "Tuvo una recaída",
+                    fecha: "\(dateString) 12:00:00",
+                    detalles: ["hasRelapse": "true"]
+                ))
+            }
+        }
+        
+        // Ordenar por fecha descendente (más reciente primero)
+        return activities.sorted { $0.fecha > $1.fecha }
     }
     
     /// Obtiene los logros de un amigo

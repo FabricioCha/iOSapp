@@ -16,6 +16,7 @@ class FriendsViewModel: ObservableObject {
     @Published var searchResults: [SearchUser] = []
     @Published var friendActivity: [FriendActivity] = []
     @Published var friendAchievements: [FriendAchievement] = []
+    @Published var friendStats: UserStats?
     
     @Published var isLoading = false
     @Published var isSearching = false
@@ -83,6 +84,17 @@ class FriendsViewModel: ObservableObject {
         }
         
         isLoading = false
+    }
+    
+    func loadFriendStats(friendId: Int) async {
+        errorMessage = nil
+        
+        do {
+            let stats = try await friendsService.getFriendStats(friendId: friendId)
+            friendStats = stats
+        } catch {
+            errorMessage = handleError(error)
+        }
     }
     
     // MARK: - Invitations Management

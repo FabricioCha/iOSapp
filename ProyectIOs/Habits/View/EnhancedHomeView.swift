@@ -214,30 +214,59 @@ struct EnhancedHomeView: View {
                     .font(.headline)
                     .fontWeight(.semibold)
                 Spacer()
-                
-                Text("\(String(completedTodayCount))/\(String(dashboardViewModel.totalHabits))")
-                    .font(.callout)
-                    .fontWeight(.medium)
-                    .foregroundColor(Color.appTextSecondary)
             }
             .padding(.horizontal)
             
-            // Progress bar
-            VStack(spacing: 8) {
-                ProgressView(value: progressPercentage)
-                    .progressViewStyle(LinearProgressViewStyle(tint: Color.appPrimaryAction))
-                    .scaleEffect(x: 1, y: 2, anchor: .center)
+            // Circular Progress
+            HStack {
+                Spacer()
                 
-                HStack {
-                    Text("\(Int(progressPercentage * 100))% completado")
-                        .font(.caption)
-                        .foregroundColor(Color.appTextSecondary)
-                    Spacer()
-                    Text(motivationalMessage)
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundColor(Color.appPrimaryAction)
+                ZStack {
+                    // Background circle
+                    Circle()
+                        .stroke(Color.gray.opacity(0.2), lineWidth: 12)
+                        .frame(width: 120, height: 120)
+                    
+                    // Progress circle
+                    Circle()
+                        .trim(from: 0, to: progressPercentage)
+                        .stroke(
+                            LinearGradient(
+                                colors: [Color.orange, Color.orange.opacity(0.7)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            style: StrokeStyle(lineWidth: 12, lineCap: .round)
+                        )
+                        .frame(width: 120, height: 120)
+                        .rotationEffect(.degrees(-90))
+                        .animation(.easeInOut(duration: 1.0), value: progressPercentage)
+                    
+                    // Center content
+                    VStack(spacing: 4) {
+                        Text("\(String(completedTodayCount))/\(String(dashboardViewModel.totalHabits))")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(Color.appTextPrimary)
+                        
+                        Text("\(Int(progressPercentage * 100))/100")
+                            .font(.caption)
+                            .foregroundColor(Color.appTextSecondary)
+                    }
                 }
+                
+                Spacer()
+            }
+            
+            // Motivational message
+            HStack {
+                Spacer()
+                Text(motivationalMessage)
+                    .font(.callout)
+                    .fontWeight(.medium)
+                    .foregroundColor(Color.appPrimaryAction)
+                    .multilineTextAlignment(.center)
+                Spacer()
             }
             .padding(.horizontal)
         }

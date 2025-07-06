@@ -122,21 +122,34 @@ struct FriendDetailView: View {
     
     private var activityView: some View {
         ScrollView {
-            LazyVStack(spacing: 12) {
+            LazyVStack(spacing: 16) {
+                // Estadísticas del amigo (si están disponibles)
+                if let stats = viewModel.friendStats {
+                    friendStatsView(stats: stats)
+                }
+                
                 if viewModel.isLoading {
                     ProgressView("Cargando actividad...")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .foregroundColor(.appTextSecondary)
+                        .padding(.top, 50)
                 } else if viewModel.friendActivity.isEmpty {
                     emptyActivityView
                 } else {
+                    // Título de actividad reciente
+                     HStack {
+                         Text("Actividad Reciente")
+                             .font(.headline)
+                             .foregroundColor(.primary)
+                         Spacer()
+                     }
+                    
                     ForEach(viewModel.friendActivity) { activity in
                         ActivityRowView(activity: activity)
                     }
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
         }
         .refreshable {
             await viewModel.loadFriendActivity(friendId: friend.id)
@@ -209,9 +222,71 @@ struct FriendDetailView: View {
         .padding(.top, 60)
     }
     
+    private func friendStatsView(stats: UserStats) -> some View {
+        VStack(spacing: 16) {
+            HStack {
+                Text("Estadísticas de \(friend.nombre)")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                Spacer()
+            }
+            
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 12) {
+                StatCardView(
+                    title: "Hábitos Totales",
+                    value: "\(stats.totalHabits)",
+                    iconName: "list.bullet",
+                    color: .blue
+                )
+                
+                StatCardView(
+                    title: "Completados Hoy",
+                    value: "\(stats.completedToday)",
+                    iconName: "checkmark.circle.fill",
+                    color: .green
+                )
+                
+                StatCardView(
+                    title: "Racha Actual",
+                    value: "\(stats.currentStreak) días",
+                    iconName: "flame.fill",
+                    color: .orange
+                )
+                
+                StatCardView(
+                    title: "Mejor Racha",
+                    value: "\(stats.longestStreak) días",
+                    iconName: "trophy.fill",
+                    color: .yellow
+                )
+            }
+            
+            // Tasa de completitud
+            VStack(spacing: 8) {
+                HStack {
+                    Text("Tasa de Completitud")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Text("\(Int(stats.completionRate * 100))%")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+                }
+                
+                ProgressView(value: stats.completionRate)
+                    .progressViewStyle(LinearProgressViewStyle(tint: .blue))
+            }
+            .padding(16)
+            .background(Color(.systemGray6))
+            .cornerRadius(12)
+        }
+     }
+    
     private func loadFriendData() async {
         await viewModel.loadFriendActivity(friendId: friend.id)
         await viewModel.loadFriendAchievements(friendId: friend.id)
+        await viewModel.loadFriendStats(friendId: friend.id)
     }
     
     private func formatDate(_ dateString: String) -> String {
@@ -303,6 +378,8 @@ struct ActivityRowView: View {
         return dateString
     }
 }
+
+
 
 struct AchievementCardView: View {
     let achievement: FriendAchievement
