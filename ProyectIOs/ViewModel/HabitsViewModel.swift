@@ -34,7 +34,7 @@ class HabitsViewModel: ObservableObject {
             
             let habitsWithStats = dashboardData.habitsConEstadisticas
             // Mapeamos los hábitos para la UI.
-            self.habits = habitsWithStats.map { Habit(id: $0.id, nombre: $0.nombre, tipo: $0.tipo, descripcion: $0.descripcion, meta_objetivo: $0.meta_objetivo) }
+            self.habits = habitsWithStats.map { Habit(id: $0.id, nombre: $0.nombre, tipo: $0.tipo, descripcion: $0.descripcion, meta_objetivo: $0.metaObjetivo) }
             
             // --- AJUSTE CLAVE ---
             // Mapeamos el estado de completado. Si `completadoHoy` es nulo, asumimos `false`.
@@ -98,8 +98,7 @@ class HabitsViewModel: ObservableObject {
             habito_id: habit.id,
             fecha_registro: dateString,
             valor_booleano: true,
-            valor_numerico: nil,
-            es_recaida: nil
+            valor_numerico: nil
         )
         
         completionStatus[String(habit.id)] = true

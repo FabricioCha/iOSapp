@@ -141,7 +141,7 @@ struct EnhancedProfileView: View {
             }
         }
         .padding()
-        .background(Color.gray.opacity(0.05))
+        .background(Color.appCardBackground)
         .cornerRadius(20)
         .padding(.horizontal)
     }

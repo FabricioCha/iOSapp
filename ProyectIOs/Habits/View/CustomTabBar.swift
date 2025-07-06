@@ -10,9 +10,6 @@ import SwiftUI
 struct CustomTabBar: View {
     // Binding a la pestaña seleccionada en la vista padre (MainTabView).
     @Binding var selectedTab: Tab
-    
-    // Binding para controlar si se muestra la hoja de creación.
-    @Binding var isAddingHabit: Bool
 
     var body: some View {
         HStack {
@@ -22,20 +19,9 @@ struct CustomTabBar: View {
                 Spacer()
                 
                 if tab == .add {
-                    // Botón especial para añadir hábito.
-                    Button {
-                        isAddingHabit = true
-                    } label: {
-                        Image(systemName: tab.rawValue)
-                            .font(.largeTitle)
-                            .foregroundColor(.white)
-                            .padding(15)
-                            .background(Color.appPrimaryAction)
-                            .clipShape(Circle())
-                            .shadow(color: .appPrimaryAction.opacity(0.5), radius: 5, y: 3)
-                    }
-                    // Lo movemos un poco hacia arriba para que destaque.
-                    .offset(y: -25)
+                    // Espacio vacío para el tab .add (el menú circular se maneja en MainTabView)
+                    Color.clear
+                        .frame(width: 60, height: 60)
                     
                 } else {
                     // Botones de pestañas normales.
@@ -74,11 +60,11 @@ extension Tab {
         case .home:
             return "Inicio"
         case .stats:
-            return "Progreso"
+            return "Amigos"
         case .add:
             return ""
-        case .quotes:
-            return "Frases"
+        case .rankings:
+            return "Rankings"
         case .profile:
             return "Perfil"
         }
@@ -89,13 +75,12 @@ extension Tab {
 #Preview {
     struct PreviewWrapper: View {
         @State private var selectedTab: Tab = .home
-        @State private var isAddingHabit = false
         var body: some View {
             VStack {
                 Spacer()
                 Text("Contenido de la Vista")
                 Spacer()
-                CustomTabBar(selectedTab: $selectedTab, isAddingHabit: $isAddingHabit)
+                CustomTabBar(selectedTab: $selectedTab)
             }
             .background(Color.gray.opacity(0.2))
         }

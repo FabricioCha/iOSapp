@@ -43,7 +43,7 @@ struct HabitRowView: View {
             }
         }
         .padding()
-        .background(Color.gray.opacity(0.15))
+        .background(Color.appCardBackground)
         .cornerRadius(15)
         .animation(.spring(), value: habitsViewModel.completionStatus[String(habit.id)])
     }

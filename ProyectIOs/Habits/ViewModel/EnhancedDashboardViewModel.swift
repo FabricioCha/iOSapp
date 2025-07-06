@@ -28,19 +28,67 @@ class EnhancedDashboardViewModel: ObservableObject {
     
     private let networkService = NetworkService.shared
     
+    // MARK: - Network Connectivity Check
+    
+    private func checkNetworkConnectivity() async -> Bool {
+        do {
+            let url = URL(string: "https://www.google.com")!
+            let (_, response) = try await URLSession.shared.data(from: url)
+            if let httpResponse = response as? HTTPURLResponse {
+                return httpResponse.statusCode == 200
+            }
+            return false
+        } catch {
+            return false
+        }
+    }
+    
     // MARK: - Public Methods
+    
+    func retryLoadDashboardData() async {
+        await loadDashboardData()
+    }
     
     func loadDashboardData() async {
         isLoading = true
         alertItem = nil
         
+        // Verificar estado de autenticación
+        let hasToken = KeychainService.shared.getToken() != nil
+        print("[EnhancedDashboardViewModel] Token de autenticación disponible: \(hasToken)")
+        
+        // Verificar conectividad de red
+        let hasConnectivity = await checkNetworkConnectivity()
+        print("[EnhancedDashboardViewModel] Conectividad de red: \(hasConnectivity)")
+        
+        if !hasConnectivity {
+            let error = APIError.requestFailed(description: "Sin conexión a internet")
+            handleError(error)
+            isLoading = false
+            return
+        }
+        
+        if !hasToken {
+            let error = APIError.requestFailed(description: "Auth token no disponible")
+            handleError(error)
+            isLoading = false
+            return
+        }
+        
         do {
+            print("[EnhancedDashboardViewModel] Iniciando carga de datos del dashboard...")
             let dashboardData = try await networkService.fetchDashboardData()
+            print("[EnhancedDashboardViewModel] Datos del dashboard recibidos exitosamente")
+            print("[EnhancedDashboardViewModel] Número de hábitos: \(dashboardData.habitsConEstadisticas.count)")
             
             // Process dashboard data
             processDashboardData(dashboardData)
             
         } catch {
+            print("[EnhancedDashboardViewModel] Error al cargar datos del dashboard: \(error)")
+            if let apiError = error as? APIError {
+                print("[EnhancedDashboardViewModel] Tipo de error API: \(apiError)")
+            }
             handleError(error)
         }
         
@@ -75,12 +123,35 @@ class EnhancedDashboardViewModel: ObservableObject {
     }
     
     private func handleError(_ error: Error) {
-        print("Error loading dashboard data: \(error.localizedDescription)")
+        print("[EnhancedDashboardViewModel] Error loading dashboard data: \(error.localizedDescription)")
         
         let title = Text("Error")
-        let message = Text("No se pudieron cargar los datos del dashboard. Por favor, intenta de nuevo.")
-        let dismissButton = Alert.Button.default(Text("OK"))
+        var message: Text
         
+        if let apiError = error as? APIError {
+            switch apiError {
+            case .requestFailed(let description):
+                if description.contains("Auth token") {
+                    message = Text("Sesión expirada. Por favor, inicia sesión nuevamente.")
+                } else {
+                    message = Text("Error de conexión: \(description)")
+                }
+            case .serverError(let statusCode, let description):
+                if statusCode == 401 {
+                    message = Text("Sesión expirada. Por favor, inicia sesión nuevamente.")
+                } else {
+                    message = Text("Error del servidor (\(statusCode)): \(description)")
+                }
+            case .decodingError(let description):
+                message = Text("Error procesando datos: \(description)")
+            default:
+                message = Text("No se pudieron cargar los datos del dashboard. Por favor, intenta de nuevo.")
+            }
+        } else {
+            message = Text("No se pudieron cargar los datos del dashboard. Verifica tu conexión a internet.")
+        }
+        
+        let dismissButton = Alert.Button.default(Text("OK"))
         alertItem = AlertItem(title: title, message: message, dismissButton: dismissButton)
     }
 }

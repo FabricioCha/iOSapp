@@ -14,16 +14,19 @@ extension Color {
     
     // MARK: - Colores Base
     static let appBackground = Color("Background")
+    static let appSecondaryBackground = Color("SecondaryBackground")
     static let appPrimaryAction = Color("PrimaryAction")
     static let appPrimaryActionGradientEnd = Color("PrimaryActionGradientEnd")
     
-    // MARK: - Colores de UI
-    static let appTextPrimary = Color.white
-    static let appTextSecondary = Color.gray
+    // MARK: - Colores de UI Adaptativos
+    static let appTextPrimary = Color("TextPrimary")
+    static let appTextSecondary = Color("TextSecondary")
+    static let appCardBackground = Color("CardBackground")
+    
+    // MARK: - Colores del Sistema
     static let appSuccess = Color.green
     static let appError = Color.red
     static let appAccent = Color("AccentColor")
-    static let appCardBackground = Color.gray.opacity(0.15)
     
     // MARK: - Gradientes
     /// El gradiente principal para todos los botones de acción importantes.

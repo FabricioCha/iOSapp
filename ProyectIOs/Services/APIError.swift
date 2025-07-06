@@ -14,6 +14,7 @@ enum APIError: Error, LocalizedError {
     case requestFailed(description: String)
     case invalidResponse
     case decodingError(description: String)
+    case encodingError
     case serverError(statusCode: Int, description: String)
     case unknownError
 
@@ -27,6 +28,8 @@ enum APIError: Error, LocalizedError {
             return "Respuesta inválida del servidor."
         case .decodingError(let description):
             return "Error al procesar la respuesta: \(description)"
+        case .encodingError:
+            return "Error al codificar los datos de la solicitud."
         case .serverError(let statusCode, let description):
             return "Error del servidor (\(statusCode)): \(description)"
         case .unknownError:

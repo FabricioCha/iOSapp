@@ -26,6 +26,8 @@ struct EnhancedHomeView: View {
                 
                 if dashboardViewModel.isLoading && dashboardViewModel.habitsWithStats.isEmpty {
                     loadingView
+                } else if !dashboardViewModel.isLoading && dashboardViewModel.habitsWithStats.isEmpty && dashboardViewModel.alertItem != nil {
+                    errorStateView
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 20) {
@@ -305,15 +307,64 @@ struct EnhancedHomeView: View {
                     .multilineTextAlignment(.center)
             }
             
-            GradientButton(
-                title: "Crear Mi Primer Hábito",
-                icon: "plus.circle.fill"
-            ) {
+            Button(action: {
                 showingAddHabit = true
+            }) {
+                HStack {
+                    Image(systemName: "plus.circle.fill")
+                    Text("Crear Mi Primer Hábito")
+                }
+                .font(.headline)
+                .foregroundColor(.white)
+                .padding()
+                .background(Color.appPrimaryAction)
+                .cornerRadius(15)
             }
         }
         .padding()
-        .background(Color.gray.opacity(0.05))
+        .background(Color.appCardBackground)
+        .cornerRadius(20)
+        .padding(.horizontal)
+    }
+    
+    // MARK: - Error State View
+    private var errorStateView: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 60))
+                .foregroundColor(.orange)
+            
+            VStack(spacing: 8) {
+                Text("Error de Conexión")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                
+                Text("No se pudieron cargar los datos. Verifica tu conexión a internet.")
+                    .font(.callout)
+                    .foregroundColor(Color.appTextSecondary)
+                    .multilineTextAlignment(.center)
+            }
+            
+            Button(action: {
+                Task {
+                    await dashboardViewModel.retryLoadDashboardData()
+                }
+            }) {
+                HStack {
+                    Image(systemName: "arrow.clockwise")
+                    Text("Reintentar")
+                }
+                .font(.callout)
+                .fontWeight(.semibold)
+                .foregroundColor(.white)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 12)
+                .background(Color.appPrimaryAction)
+                .cornerRadius(25)
+            }
+        }
+        .padding()
+        .background(Color.appCardBackground)
         .cornerRadius(20)
         .padding(.horizontal)
     }

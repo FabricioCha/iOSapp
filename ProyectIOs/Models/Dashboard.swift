@@ -10,32 +10,40 @@ import Foundation
 // Representa la respuesta completa del endpoint /api/dashboard
 struct DashboardData: Codable {
     let habitsConEstadisticas: [HabitWithStats]
+    
+    enum CodingKeys: String, CodingKey {
+        case habitsConEstadisticas = "habits_con_estadisticas"
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        habitsConEstadisticas = try container.decode([HabitWithStats].self, forKey: .habitsConEstadisticas)
+    }
 }
 
-// --- STRUCT CORREGIDA ---
-// Representa un hábito individual junto con sus estadísticas.
-// Los campos que la API del dashboard no envía ahora son OPCIONALES.
+// Representa un hábito individual junto con sus estadísticas desde la API
 struct HabitWithStats: Codable, Identifiable, Hashable {
     let id: Int
     let nombre: String
     let tipo: ApiHabitType
-    var descripcion: String?
-    var meta_objetivo: Double?
+    let descripcion: String?
+    let metaObjetivo: Double?
+    let fechaCreacion: String
     
     // Estadísticas que vienen del servidor
     let rachaActual: Int
     
-    // --- CAMBIO CLAVE: Hacer estas propiedades opcionales ---
-    // Si la API no envía estos campos, no se romperá la decodificación.
+    // Campos opcionales para compatibilidad
     let mejorRacha: Int?
     let totalCompletados: Int?
     let completadoHoy: Bool?
     
-    // El bloque CodingKeys se actualiza para incluir los nuevos miembros.
     enum CodingKeys: String, CodingKey {
         case id, nombre, tipo, descripcion
-        case meta_objetivo = "metaObjetivo"
-        case rachaActual, mejorRacha, totalCompletados, completadoHoy
+        case metaObjetivo = "meta_objetivo"
+        case fechaCreacion = "fecha_creacion"
+        case rachaActual = "racha_actual"
+        case mejorRacha, totalCompletados, completadoHoy
     }
 }
 

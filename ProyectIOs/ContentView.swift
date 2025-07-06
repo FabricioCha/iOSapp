@@ -32,7 +32,7 @@ struct ContentView: View {
             .environmentObject(habitsViewModel)
             
             if authViewModel.isLoading {
-                Color.black.opacity(0.4).ignoresSafeArea()
+                Color.primary.opacity(0.4).ignoresSafeArea()
                 ProgressView()
                     .progressViewStyle(CircularProgressViewStyle(tint: .white))
                     .scaleEffect(2)

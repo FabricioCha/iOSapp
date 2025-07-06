@@ -251,7 +251,52 @@ class NetworkService {
         let url = baseURL.appendingPathComponent("dashboard")
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
-        return try await performRequest(for: request, withAuth: true)
+        return try await performDashboardRequest(for: request, withAuth: true)
+    }
+    
+    // Método específico para dashboard que no usa convertFromSnakeCase
+    private func performDashboardRequest<T: Decodable>(for request: URLRequest, withAuth: Bool = false, expecting: T.Type = T.self) async throws -> T {
+        var mutableRequest = request
+        
+        if withAuth {
+            guard let token = getAuthToken() else {
+                throw APIError.requestFailed(description: "Auth token no disponible.")
+            }
+            mutableRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        if mutableRequest.httpMethod == "POST" || mutableRequest.httpMethod == "PUT" {
+            mutableRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        }
+        
+        let (data, response) = try await URLSession.shared.data(for: mutableRequest)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        if let jsonString = String(data: data, encoding: .utf8) {
+            print("Respuesta JSON recibida: \(jsonString)")
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            // Intenta decodificar el mensaje de error de la API
+            if let apiError = try? JSONDecoder().decode(APIErrorResponse.self, from: data) {
+                 throw APIError.serverError(statusCode: httpResponse.statusCode, description: apiError.message)
+            }
+            let errorDescription = String(data: data, encoding: .utf8) ?? "Sin descripción"
+            throw APIError.serverError(statusCode: httpResponse.statusCode, description: errorDescription)
+        }
+        
+        do {
+            // Usar un decoder sin convertFromSnakeCase para dashboard
+            let dashboardDecoder = JSONDecoder()
+            return try dashboardDecoder.decode(T.self, from: data)
+        } catch {
+            print("Error de decodificación: \(error)")
+            print("Datos recibidos: \(String(data: data, encoding: .utf8) ?? "No se pudo convertir a string")")
+            throw APIError.decodingError(description: error.localizedDescription)
+        }
     }
     
     // MARK: - Enhanced Stats Endpoints (Phase 2)

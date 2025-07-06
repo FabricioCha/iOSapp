@@ -37,5 +37,5 @@ struct HabitLogRequest: Codable {
     var valor_booleano: Bool?
     // CAMBIO: El valor numérico ahora es Double?
     var valor_numerico: Double?
-    var es_recaida: Bool?
+    var notas: String?
 }

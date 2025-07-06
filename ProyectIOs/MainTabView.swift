@@ -10,9 +10,9 @@ import SwiftUI
 // Enum para definir cada una de las pestañas en la barra de navegación principal.
 enum Tab: String, CaseIterable {
     case home = "house.fill"
-    case stats = "chart.pie.fill"
+    case stats = "person.2.fill"
     case add = "plus.square.fill"
-    case quotes = "text.quote"
+    case rankings = "trophy.fill"
     case profile = "person.fill"
 }
 
@@ -32,6 +32,11 @@ struct MainTabView: View {
     @State private var selectedTab: Tab = .home
     // Estado para controlar la presentación de la vista modal para añadir un hábito.
     @State private var isAddingHabit = false
+    // Estado para controlar el menú circular
+    @State private var showCircularMenu = false
+    // Estados para las nuevas funcionalidades
+    @State private var showManageRoutines = false
+    @State private var showCompetitions = false
     
     var body: some View {
         ZStack {
@@ -41,11 +46,11 @@ struct MainTabView: View {
                 case .home:
                     EnhancedHomeView()
                 case .stats:
-                    EnhancedStatsView()
+                    FriendsView()
                 case .profile:
                     EnhancedProfileView()
-                case .quotes:
-                    QuotesView()
+                case .rankings:
+                    RankingsView()
                 case .add:
                     EmptyView()
                 }
@@ -53,9 +58,23 @@ struct MainTabView: View {
                 Spacer() // Empuja la barra de pestañas hacia la parte inferior.
                 
                 // Nuestra barra de pestañas personalizada.
-                CustomTabBar(selectedTab: $selectedTab, isAddingHabit: $isAddingHabit)
+                CustomTabBar(selectedTab: $selectedTab)
             }
             .background(Color.appBackground.ignoresSafeArea())
+            
+            // Menú circular flotante
+            CircularMenu(
+                isShowing: $showCircularMenu,
+                onCreateHabit: {
+                    isAddingHabit = true
+                },
+                onManageRoutines: {
+                    showManageRoutines = true
+                },
+                onCompetitions: {
+                    showCompetitions = true
+                }
+            )
             
             // --- Lógica de Celebración de Insignias Reactivada ---
             // Si hay insignias recién ganadas, muestra la vista de celebración.
@@ -83,6 +102,14 @@ struct MainTabView: View {
         // Cuando isAddingHabit se pone en 'true', se presenta la vista de creación de hábitos.
         .sheet(isPresented: $isAddingHabit) {
             OnboardingContainerView()
+        }
+        // Sheet para gestionar rutinas
+        .sheet(isPresented: $showManageRoutines) {
+            ManageRoutinesView()
+        }
+        // Sheet para competencias
+        .sheet(isPresented: $showCompetitions) {
+            CompetitionsView()
         }
         // Inyectamos los ViewModels en el entorno.
         .environmentObject(habitsViewModel)
