@@ -31,15 +31,20 @@ class EnhancedDashboardViewModel: ObservableObject {
     // MARK: - Network Connectivity Check
     
     private func checkNetworkConnectivity() async -> Bool {
+        // Intentar conectar directamente al servidor de la API
         do {
-            let url = URL(string: "https://www.google.com")!
-            let (_, response) = try await URLSession.shared.data(from: url)
+            let baseURL = URL(string: "https://ery-app-turso.vercel.app")!
+            let request = URLRequest(url: baseURL, timeoutInterval: 5.0)
+            let (_, response) = try await URLSession.shared.data(for: request)
             if let httpResponse = response as? HTTPURLResponse {
-                return httpResponse.statusCode == 200
+                // Cualquier respuesta del servidor indica conectividad
+                return httpResponse.statusCode < 500
             }
             return false
         } catch {
-            return false
+            // Si falla la verificación, asumir que hay conectividad y dejar que el error real se maneje en la llamada a la API
+            print("[EnhancedDashboardViewModel] No se pudo verificar conectividad, continuando con la carga: \(error.localizedDescription)")
+            return true
         }
     }
     
@@ -57,16 +62,20 @@ class EnhancedDashboardViewModel: ObservableObject {
         let hasToken = KeychainService.shared.getToken() != nil
         print("[EnhancedDashboardViewModel] Token de autenticación disponible: \(hasToken)")
         
-        // Verificar conectividad de red
+        // Verificar conectividad de red (opcional, no bloquea la carga)
         let hasConnectivity = await checkNetworkConnectivity()
         print("[EnhancedDashboardViewModel] Conectividad de red: \(hasConnectivity)")
         
+        // Comentamos la verificación que bloquea la carga
+        // La conectividad real se verificará en la llamada a la API
+        /*
         if !hasConnectivity {
             let error = APIError.requestFailed(description: "Sin conexión a internet")
             handleError(error)
             isLoading = false
             return
         }
+        */
         
         if !hasToken {
             let error = APIError.requestFailed(description: "Auth token no disponible")

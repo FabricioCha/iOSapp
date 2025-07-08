@@ -18,6 +18,7 @@ struct EnhancedHomeView: View {
     @State private var selectedHabitType: HabitType = .good
     @State private var searchText = ""
     @State private var showingFilterOptions = false
+    @State private var showingSearch = false
     
     var body: some View {
         NavigationStack {
@@ -56,34 +57,7 @@ struct EnhancedHomeView: View {
             .foregroundColor(Color.appTextPrimary)
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    HStack {
-                        Text(getGreeting())
-                            .font(.title2)
-                            .fontWeight(.bold)
-                    }
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: 12) {
-                        Button {
-                            showingFilterOptions = true
-                        } label: {
-                            Image(systemName: "line.3.horizontal.decrease.circle")
-                                .font(.title3)
-                        }
-                        
-                        Button {
-                            showingAddHabit = true
-                        } label: {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.title2)
-                                .foregroundColor(Color.appPrimaryAction)
-                        }
-                    }
-                }
-            }
+
             .onAppear {
                 Task {
                     await loadAllData()
@@ -101,8 +75,10 @@ struct EnhancedHomeView: View {
             .sheet(isPresented: $showingFilterOptions) {
                 FilterOptionsView(selectedType: $selectedHabitType)
             }
+            .sheet(isPresented: $showingSearch) {
+                SearchHabitsView(searchText: $searchText)
+            }
         }
-        .searchable(text: $searchText, prompt: "Buscar hábitos...")
     }
     
     // MARK: - Welcome Header Section
@@ -110,7 +86,7 @@ struct EnhancedHomeView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("¡Hola, \(authViewModel.currentUser?.name ?? "Usuario")!")
+                    Text("\(getGreeting()), \(authViewModel.currentUser?.name ?? "Usuario")!")
                         .font(.title)
                         .fontWeight(.bold)
                     
@@ -285,6 +261,24 @@ struct EnhancedHomeView: View {
                     Text("\(String(filteredHabits.count)) hábitos")
                         .font(.caption)
                         .foregroundColor(Color.appTextSecondary)
+                }
+                
+                HStack(spacing: 12) {
+                    Button {
+                        showingSearch = true
+                    } label: {
+                        Image(systemName: "magnifyingglass")
+                            .font(.title3)
+                            .foregroundColor(Color.appTextSecondary)
+                    }
+                    
+                    Button {
+                        showingFilterOptions = true
+                    } label: {
+                        Image(systemName: "line.3.horizontal.decrease.circle")
+                            .font(.title3)
+                            .foregroundColor(Color.appTextSecondary)
+                    }
                 }
             }
             .padding(.horizontal)
